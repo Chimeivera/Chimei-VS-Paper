@@ -339,6 +339,43 @@ const shortCat=c=>{if(c.includes('會議'))return (c.includes('國際')?'國際'
   const s=c.startsWith('SCI')?'SCI':'非SCI';const t=c.includes('病例報告')?'病例報告':c.includes('研究論文')?'研究論文':'文章';return `${s} ${t}`+(/＜\s*1/.test(c)?'（IF＜1.0）':/≧/.test(c)?'（IF≧1.0或前50%）':'');};
 
 let D=null,dl=null;
+// Imported rows belong to this dashboard; retain the raw rows so build() remains
+// the single source of the statistics after refresh and future app updates.
+const DATA_STORAGE_KEY='chimei-vs-paper:imported-data:v1';
+let dataStorageStatus='內建資料，匯入後自動儲存',dataStorageWarning='',dataSavedAt='';
+function saveImportedRows(rows,file){
+  try{
+    const savedAt=new Date().toISOString();
+    const payload=JSON.stringify({version:1,rows,file,savedAt});
+    window.localStorage.setItem(DATA_STORAGE_KEY,payload);
+    dataSavedAt=savedAt;dataStorageStatus='已儲存於本機';dataStorageWarning='';
+    return true;
+  }catch(error){
+    console.error('Imported data could not be saved',error);
+    dataSavedAt='';dataStorageStatus='未儲存，重新整理會還原';
+    dataStorageWarning='資料已載入，但瀏覽器未能儲存。請保留原始 Excel；重新整理後需要再次匯入。';
+    return false;
+  }
+}
+function loadInitialData(){
+  try{
+    const raw=window.localStorage.getItem(DATA_STORAGE_KEY);
+    if(raw!==null){
+      const saved=JSON.parse(raw);
+      if(saved.version!==1||typeof saved.file!=='string'||!Array.isArray(saved.rows)||!saved.rows.length||!saved.rows.every(r=>r&&typeof r==='object'&&!Array.isArray(r)))throw new Error('Invalid saved dashboard data');
+      const restored=build(saved.rows,saved.file);
+      if(!restored.recs.length)throw new Error('Saved dashboard data contains no usable records');
+      dataSavedAt=typeof saved.savedAt==='string'?saved.savedAt:'';
+      dataStorageStatus='已讀取本機儲存資料';return restored;
+    }
+  }catch(error){
+    console.error('Saved data could not be restored',error);
+    dataStorageStatus='本機資料未能讀取，目前使用內建資料';
+    dataStorageWarning='未能讀取本機儲存資料，目前顯示內建資料。請重新匯入最新 Excel；原有儲存內容未刪除。';
+  }
+  return build(RAW.r.map(a=>Object.fromEntries(RAW.h.map((h,i)=>[h,a[i]]))),'110-115年度醫師論文申請.xls');
+}
+
 function build(rows,file){
   const recs=[],fees=[],latest={};let cutY=0,cutM=0;const unk=new Set();
   for(const r0 of rows){
@@ -389,7 +426,7 @@ function show(id){cur=id;TABS.forEach(([t])=>{const on=t===id;document.getElemen
   renderTab(id);window.scrollTo({top:0});}
 function renderAll(){
   document.getElementById('hTitle').innerHTML=`<span class="yr">${Y()[0]}–${LAST()}<small>年度</small></span><span class="nm">論文獎金統計分析</span>`;
-  document.getElementById('hSub').innerHTML=`<span>${icon('fa-clock')}資料截至 ${cutTxt()}</span><span class="fn">${icon('fa-file-lines')}${esc(D.file)}</span><span>${icon('fa-database')}計入 ${fmt(D.recs.length)} 筆</span>`;
+  document.getElementById('hSub').innerHTML=`<span>${icon('fa-clock')}資料截至 ${cutTxt()}</span><span class="fn">${icon('fa-file-lines')}${esc(D.file)}</span><span>${icon('fa-database')}計入 ${fmt(D.recs.length)} 筆</span><span id="dataStorageStatus" role="status" title="${esc(dataStorageWarning||(dataSavedAt?'儲存時間：'+new Date(dataSavedAt).toLocaleString('zh-TW')+'。僅限同一瀏覽器；清除網站資料會移除儲存內容。':'匯入後保存在同一台電腦、同一個瀏覽器；不會同步至其他裝置。'))}">${icon(dataStorageWarning?'fa-triangle-exclamation':'fa-hard-drive')}${esc(dataStorageStatus)}</span>`;
   document.title=`${ORGS} ${rangeTxt()} 論文獎金統計分析`;
   TABS.forEach(([t],i)=>document.querySelector(`#p-${t} .cut`).textContent=`資料截至 ${cutTxt()}${i?'　'+i:''}`);
   TABS.forEach(([t])=>{document.getElementById('b-'+t).dataset.done='';});
@@ -634,8 +671,9 @@ fileIn.onchange=async()=>{
       if(h.includes('論文類別')&&h.includes('申請者')){paper=rows;break;}}
     if(!paper){toast('找不到論文資料：工作表需含「申請者」與「論文類別」欄位。');return;}
     const nd=build(paper,f.name);if(!nd.recs.length){toast('檔案裡沒有可計入的論文資料，請確認是否為論文申請匯出檔。');return;}
+    const saved=saveImportedRows(paper,f.name);
     D=nd;qState='';Object.values(charts).forEach(c=>c.destroy());for(const k in charts)delete charts[k];renderAll();
-    toast(`已載入 ${f.name}：論文 ${fmt(D.recs.length)} 筆、刊登費 ${fmt(D.fees.length)} 筆`+(D.unknownPUA.length?`。發現未對應的造字 ${D.unknownPUA.map(c=>'U+'+c).join('、')}，姓名可能顯示為方框`:''),D.unknownPUA.length?9000:3600);
+    toast(`已載入 ${f.name}：論文 ${fmt(D.recs.length)} 筆、刊登費 ${fmt(D.fees.length)} 筆`+(saved?'。已儲存，重新整理仍會保留。':'。'+dataStorageWarning)+(D.unknownPUA.length?`。發現未對應的造字 ${D.unknownPUA.map(c=>'U+'+c).join('、')}，姓名可能顯示為方框`:''),!saved||D.unknownPUA.length?12000:5000);
   }catch(e){console.error(e);toast('讀取檔案失敗：'+(e.message||e));}
 };
 
@@ -811,8 +849,9 @@ document.getElementById('btnPpt').onclick=async()=>{
 };
 
 // ---------- init
-D=build(RAW.r.map(a=>Object.fromEntries(RAW.h.map((h,i)=>[h,a[i]]))),'110-115年度醫師論文申請.xls');
+D=loadInitialData();
 renderAll();show('ov');
+if(dataStorageWarning)toast(dataStorageWarning,12000);
 const reTheme=()=>{['tr','dept','ppl','cls'].forEach(t=>document.getElementById('b-'+t).dataset.done='');if(['tr','dept','ppl','cls'].includes(cur))renderTab(cur);};
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',reTheme);
 new MutationObserver(reTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
@@ -821,3 +860,4 @@ new MutationObserver(reTheme).observe(document.documentElement,{attributes:true,
 
 </body>
 </html>
+
