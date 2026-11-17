@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>佳里奇美｜共用統計測試版</title>
+<style>
+:root{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#112a32;background:#eef4f5}*{box-sizing:border-box}
+body{margin:0}.top{background:#092d3b;color:white;padding:30px max(18px,calc((100vw - 1100px)/2))}.top h1{font-size:clamp(22px,3vw,34px);margin:4px 0}.top p{opacity:.85}
+main{max-width:1100px;margin:24px auto;padding:0 18px}.notice{background:#fff9eb;border:1px solid #eed8a4;border-radius:10px;padding:14px 18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}.stat{background:white;border:1px solid #cbdde0;border-radius:12px;padding:19px}.stat strong{font-size:28px;color:#0a7b83;display:block}.stat small{color:#526f76}
+.panel{background:white;border:1px solid #cbdde0;border-radius:12px;padding:22px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;white-space:nowrap}th,td{border-bottom:1px solid #e2edef;padding:11px 13px;text-align:right}th:first-child,td:first-child{text-align:left}th{background:#0a3240;color:white}
+button{background:#087985;color:white;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;font-size:15px}
+.status{margin:12px 0 16px;color:#45616a}footer{margin:22px 0 34px;color:#5a727a;font-size:13px}
+@media(max-width:650px){.stats{grid-template-columns:1fr}.stat strong{font-size:24px}}
+</style></head><body>
+<header class="top"><h1>論文研究成果｜全院共用資料測試</h1><p>公開頁面僅顯示年度及論文分類彙總，不提供人事號、姓名或簽核明細</p></header>
+<main>
+<section class="notice"><strong>測試版，不是正式網站。</strong>目前正式網站沒有切換至共用模式；此頁需等待新版 Apps Script 完成授權部署，才會讀到公開彙總數據。</section>
+<div class="status" id="status" aria-live="polite">尚未載入資料</div>
+<button type="button" id="reload">重新讀取共用統計</button>
+<section class="stats" id="stats"></section>
+<section class="panel"><h2>各年度論文獎勵與刊登費</h2><div id="table">尚未取得資料</div></section>
+<footer>顯示為論文獎勵申請紀錄筆數，而非去重後論文篇數。若資料服務不可公開讀取，此頁不會回退使用內建的敏感明細。</footer>
+</main>
+<script>
+(function(){
+const endpoint='https://script.google.com/macros/s/AKfycbzMLf-M-vpokIyYDofRtOW-PJWkz14_N3wu-NWQ6_KNVwlAveBplCAw2rcx2y3kJlKF/exec';
+const f=n=>Number(n||0).toLocaleString('zh-TW'), status=document.getElementById('status');
+let count=0;
+function render(data){
+ if(!data||data.ok!==true||data.mode!=='aggregate-only'||!Array.isArray(data.years)){status.textContent='資料版本不符合安全共用模式，已拒絕顯示。請先部署 aggregate-only 版 Apps Script。';return;}
+ const years=data.years, total=(key)=>years.reduce((a,x)=>a+(Number(x[key])||0),0);
+ const cards=[['論文獎勵紀錄',total('papers'),'筆'],['論文獎勵金額',total('awardAmount'),'元'],['刊登費補助',total('feeAmount'),'元']];
+ const st=document.getElementById('stats');st.textContent='';
+ for(const [name,val,unit] of cards){const e=document.createElement('div');e.className='stat';const t=document.createElement('small');t.textContent=name;const v=document.createElement('strong');v.textContent=f(val)+' '+unit;e.append(t,v);st.append(e);}
+ const tbl=document.createElement('table'),head=document.createElement('thead'),hr=document.createElement('tr');
+ ['年度','論文獎勵筆數','論文獎勵金額（元）','刊登費筆數','刊登費金額（元）','SCI筆數'].forEach(t=>{const th=document.createElement('th');th.textContent=t;hr.append(th)});head.append(hr);tbl.append(head);
+ const body=document.createElement('tbody');for(const d of years){const tr=document.createElement('tr');[d.year,d.papers,f(d.awardAmount),d.fees,f(d.feeAmount),d.categories?.SCI?.count||0].forEach(v=>{const td=document.createElement('td');td.textContent=String(v);tr.append(td)});body.append(tr)}tbl.append(body);
+ const holder=document.getElementById('table');holder.textContent='';holder.append(tbl);status.textContent='共用資料已載入；最後發布：'+(data.updatedAt||'未記錄');
+}
+function load(){
+ const callback='paperSummaryCallback'+(++count);
+ status.textContent='正在讀取 Google 共用統計…';
+ const script=document.createElement('script');
+ const timer=setTimeout(()=>{delete window[callback];script.remove();status.textContent='目前無法公開讀取共用統計，可能仍是「只有我自己」的部署設定，或新版程式尚未部署。';},15000);
+ window[callback]=data=>{clearTimeout(timer);script.remove();delete window[callback];render(data);};
+ script.onerror=()=>{clearTimeout(timer);script.remove();delete window[callback];status.textContent='共用統計讀取失敗。';};
+ script.src=endpoint+'?callback='+encodeURIComponent(callback)+'&t='+Date.now();
+ document.head.append(script);
+}
+document.getElementById('reload').onclick=load;load();
+})();
+</script></body></html>
