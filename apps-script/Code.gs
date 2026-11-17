@@ -34,13 +34,20 @@ function read_(tab) {
   return rows.slice(1).filter(r=>r.some(v=>v!=='')).map(r=>r.slice(0,HEADERS.length));
 }
 function key_(r){return String(r[0]).trim()+'|'+String(r[1]).trim();}
+function canonical_(r){
+  const pua={'':'畊','':'彣','':'温','':'贋'};
+  return JSON.stringify(r.map(v=>String(v??'').replace(/[-]/g,c=>pua[c]||c).replace(/\r\n/g,'\n')));
+}
 function validate_(candidate,existing){
-  const seen=new Set(),old=new Map(existing.map(r=>[key_(r),JSON.stringify(r)]));
+  const seen=new Set(),old=new Map(existing.map(r=>[key_(r),canonical_(r)]));
   candidate.forEach((r,i)=>{
-    if(!r[0]||!r[1]||!r[3]||!r[10])throw Error('Mandatory data missing at row '+(i+2));
+    if(!r[0]||!r[1]||!r[3])throw Error('Required application identity missing at row '+(i+2));
     const k=key_(r);if(seen.has(k))throw Error('Duplicate application at '+(i+2)+' '+k);
     seen.add(k);
-    if(old.has(k)&&old.get(k)!==JSON.stringify(r))
+    // Legacy publication-fee applications may have no title; preserve them,
+    // but new applications must supply a title.
+    if(!old.has(k)&&!r[10])throw Error('New application title missing at row '+(i+2));
+    if(old.has(k)&&old.get(k)!==canonical_(r))
       throw Error('Historical application modified: '+k);
   });
   const missing=[...old.keys()].filter(k=>!seen.has(k));
