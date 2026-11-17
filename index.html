@@ -283,6 +283,24 @@ input[type=file]{display:none}
   .mb{padding:12px 10px}.mbg{padding:calc(env(safe-area-inset-top,0px) + 16px) 8px 16px}
 
 }
+
+/* Prominent year-over-year comparison panel */
+.yoy-feature{margin-top:18px;padding:22px 24px;background:var(--surface);border:2px solid var(--cyan);border-radius:12px;box-shadow:0 8px 24px -18px rgba(3,71,84,.55)}
+.yoy-feature-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.yoy-feature-head h3{font-size:20px;margin:0;color:var(--ink)}
+.yoy-feature-head small{font-size:13px;color:var(--muted)}
+.yoy-feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.yoy-feature-card{padding:18px;border-radius:10px;background:var(--surface2);border:1px solid var(--rule);min-width:0}
+.yoy-feature-label{font-size:14px;font-weight:700;color:var(--ink2)}
+.yoy-feature-change{font:700 clamp(34px,4.1vw,55px)/1.13 var(--mono);margin:8px 0 4px;font-variant-numeric:tabular-nums}
+.yoy-feature-change.up{color:var(--up)}.yoy-feature-change.dn{color:var(--dn)}
+.yoy-feature-change.neutral{color:var(--ink)}
+.yoy-feature-amount{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:10px}
+.yoy-feature-pair{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2)}
+.yoy-feature-pair b{color:var(--ink);font-family:var(--mono);font-size:15px}
+.yoy-feature-foot{font-size:12.5px;color:var(--muted);margin-top:12px}
+@media(max-width:700px){.yoy-feature{padding:16px}.yoy-feature-grid{grid-template-columns:1fr}.yoy-feature-change{font-size:40px}}
+
 </style>
 </head>
 <body>
@@ -462,6 +480,7 @@ R.ov=el=>{
 </div>
      <div class="ph"><img src="${PHOTO}" alt="佳里奇美醫院院區外觀"></div>
      <svg class="ecg" viewBox="0 0 800 80" preserveAspectRatio="none" aria-hidden="true"><path class="base hero-line" d="${ECG_D}"/></svg></div>
+   ${yearComparisonPanel()}
    <div class="kpis">${mon('fa-sack-dollar','累計論文獎金','TOTAL AWARDS',w1(sum(D.recs)),'萬元')}${mon('fa-file-waveform','累計論文數','PAPERS',fmt(D.recs.length),'篇')}${mon('fa-user-doctor','獲獎醫師','PHYSICIANS',fmt(people),'人')}${mon('fa-hospital','涵蓋科別','DEPARTMENTS',fmt(dv),'個')}</div>${brief()}`;
 };
 R.yr=el=>{
@@ -491,6 +510,29 @@ function heroLead(){
  <div class="chips"><span>${icon('fa-clock')} ${current} 年截至 ${D.cutM} 月，非全年數字</span>
  ${priorSame.length?`<span>${icon('fa-chart-line')} 同期獎金 ${diff(sum(priorSame),sum(curSame))}・紀錄數 ${diff(priorSame.length,curSame.length)}</span>`:''}
  <span>${icon('fa-calendar-check')} 完整年度比較：${Y()[0]}–${current-1} 年</span></div>`;
+}
+function yearComparisonPanel(){
+ const y=LAST(),m=D.cutM;
+ if(!Y().includes(y-1)||!Number.isFinite(m)||m<1||m>12)return '';
+ const inPeriod=r=>r.am&&r.am<=m;
+ const cur=D.recs.filter(r=>r.y===y&&inPeriod(r)),prior=D.recs.filter(r=>r.y===y-1&&inPeriod(r));
+ if(!prior.length)return '';
+ const b0=sum(prior),b1=sum(cur),n0=prior.length,n1=cur.length;
+ const block=(label,now,old,isMoney)=>{
+  const delta=now-old,pct=old?Math.round((delta/old)*1000)/10:null;
+  const cls=delta>0?'up':delta<0?'dn':'neutral';
+  const sign=delta>0?'+':delta<0?'−':'';
+  const percent=pct===null?'無法計算':`${pct>0?'+':''}${pct}%`;
+  const display=v=>isMoney?w1(v)+' 萬元':fmt(v)+' 筆';
+  return `<div class="yoy-feature-card"><div class="yoy-feature-label">${label}｜較 ${y-1} 年同期</div>
+   <div class="yoy-feature-change ${cls}">${icon(delta>=0?'fa-arrow-trend-up':'fa-arrow-trend-down')} ${percent}</div>
+   <div class="yoy-feature-amount">${delta===0?'持平':`${sign}${display(Math.abs(delta))}`}</div>
+   <div class="yoy-feature-pair"><span>${y} 年 <b>${display(now)}</b></span><span>${y-1} 年 <b>${display(old)}</b></span></div></div>`;
+ };
+ return `<section class="yoy-feature" aria-label="${y} 年與 ${y-1} 年同期比較">
+   <div class="yoy-feature-head"><h3>${icon('fa-chart-line')} ${y} vs ${y-1} 年同期比較</h3><small>兩年度皆以 1–${m} 月申請紀錄計算</small></div>
+   <div class="yoy-feature-grid">${block('論文獎金',b1,b0,true)}${block('論文獎勵紀錄',n1,n0,false)}</div>
+   <div class="yoy-feature-foot">僅比較論文發表獎勵，不含刊登費；依申請序號月份計算。同年未滿全年，請勿直接與完整年度比較。</div></section>`;
 }
 function briefData(){
   const out=[],full=Y().filter(y=>y!==LAST()),L=LAST(),pct=(x,y)=>Math.round((y-x)/x*100);
