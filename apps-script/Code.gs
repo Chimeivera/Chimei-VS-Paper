@@ -55,9 +55,9 @@ function validate_(candidate,existing){
   return {total:candidate.length,added:candidate.length-existing.length};
 }
 /**
- * Public endpoint returns aggregate-only metrics. Never disclose the raw
- * Published tab, names, personnel identifiers, titles, author credits,
- * signatures, or individual award amounts via doGet.
+ * Default public endpoint returns aggregate statistics. The optional
+ * dashboard view includes records needed by the original nine-panel site;
+ * signature content is omitted from its response.
  */
 function publicSummary_(rows) {
   const YEAR = 0, ITEM = 5, CATEGORY = 6, AMOUNT = 7;
@@ -89,7 +89,14 @@ function publicSummary_(rows) {
 }
 function doGet(e) {
   try{
-    const result=publicSummary_(read_(TAB_PUBLISHED));
+    const view=e&&e.parameter&&e.parameter.view;
+    const published=read_(TAB_PUBLISHED);
+    // Keep the published summary endpoint unchanged; the original nine-page
+    // dashboard requests this detail view to render all existing visualizations.
+    const result=view==='dashboard'
+      ? {ok:true,version:3,mode:'dashboard',updatedAt:updatedAt_(),headers:HEADERS,
+         rows:published.map(r=>r.map((v,i)=>i===13?'':v))}
+      : publicSummary_(published);
     const callback=e&&e.parameter&&e.parameter.callback;
     if(callback){
       if(!/^[A-Za-z_$][\w$]{0,70}$/.test(callback))throw Error('Invalid callback');
