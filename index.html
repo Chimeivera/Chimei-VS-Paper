@@ -301,6 +301,44 @@ input[type=file]{display:none}
 .yoy-feature-foot{font-size:12.5px;color:var(--muted);margin-top:12px}
 @media(max-width:700px){.yoy-feature{padding:16px}.yoy-feature-grid{grid-template-columns:1fr}.yoy-feature-change{font-size:40px}}
 
+
+/* 2026-11 header refinement: keep all original controls and branding */
+.mast-in{
+  grid-template-columns:auto minmax(0,1fr);
+  grid-template-areas:"mastbrand masttitle" "masttools masttools";
+  column-gap:24px;row-gap:18px;align-items:start;
+  padding:22px 30px 14px;
+}
+.mast-in>.brand{grid-area:mastbrand;align-self:center;}
+.mast-in>.ttl{grid-area:masttitle;align-self:center;min-width:0}
+.mast-in>.acts{
+  grid-area:masttools;display:flex;flex-wrap:wrap;
+  justify-content:flex-end;align-items:center;gap:10px;
+  padding-top:14px;border-top:1px solid var(--deck-line);
+}
+.mast-in .ttl h1{font-size:clamp(23px,2vw,30px);gap:6px 14px}
+.mast-in .ttl .meta{display:grid;grid-template-columns:repeat(2,minmax(0,max-content));gap:5px 22px;margin-top:11px;font-size:13px}
+.mast-in .ttl .meta span{white-space:normal;line-height:1.4}
+.mast-in .acts .sbtn{min-height:43px;padding:9px 17px;font-size:14px;font-weight:600;flex:0 0 auto}
+.mast-in #btnSharedSync{border-color:var(--cyan-hi);color:var(--cyan-hi)}
+.mast-in #btnPpt{box-shadow:0 4px 15px rgba(22,175,190,.14)}
+@media (max-width:980px){
+  .mast-in{grid-template-columns:minmax(0,1fr);grid-template-areas:"mastbrand" "masttitle" "masttools";padding:15px 17px 10px;row-gap:12px}
+  .mast-in>.brand{justify-self:start}
+  .mast-in>.ttl{width:100%}
+  .mast-in .ttl h1{font-size:clamp(20px,4vw,25px)}
+  .mast-in>.acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:9px;padding-top:13px}
+  .mast-in .acts .sbtn{min-width:0;white-space:nowrap;padding:9px 7px;font-size:13px}
+  .mast-in .ttl .meta{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}
+  .mast-in .ttl .meta .fn{display:inline-flex}
+}
+@media (max-width:540px){
+  .mast-in>.acts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mast-in .ttl .meta{grid-template-columns:1fr}
+  .mast-in .ttl .meta span{font-size:12px}
+  .mast-in .ttl h1{font-size:20px}
+}
+
 </style>
 </head>
 <body>
