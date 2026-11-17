@@ -447,7 +447,7 @@ function show(id){cur=id;TABS.forEach(([t])=>{const on=t===id;document.getElemen
   renderTab(id);window.scrollTo({top:0});}
 function renderAll(){
   document.getElementById('hTitle').innerHTML=`<span class="yr">${Y()[0]}–${LAST()}<small>年度</small></span><span class="nm">論文獎金統計分析</span>`;
-  document.getElementById('hSub').innerHTML=`<span>${icon('fa-clock')}資料截至 ${cutTxt()}</span><span class="fn">${icon('fa-file-lines')}${esc(D.file)}</span><span>${icon('fa-database')}計入 ${fmt(D.recs.length)} 筆</span><span id="dataStorageStatus" role="status" title="${esc(dataStorageWarning||(dataSavedAt?'儲存時間：'+new Date(dataSavedAt).toLocaleString('zh-TW')+'。僅限同一瀏覽器；清除網站資料會移除儲存內容。':'匯入後保存在同一台電腦、同一個瀏覽器；不會同步至其他裝置。'))}">${icon(dataStorageWarning?'fa-triangle-exclamation':'fa-hard-drive')}${esc(dataStorageStatus)}</span>`;
+  document.getElementById('hSub').innerHTML=`<span>${icon('fa-clock')}資料截至 ${cutTxt()}</span><span class="fn">${icon('fa-file-lines')}${esc(D.file)}</span><span>${icon('fa-database')}計入 ${fmt(D.recs.length)} 筆</span><span id="dataStorageStatus" role="status" title="${esc(dataStorageWarning||(dataStorageStatus==='全院共用資料已同步'?'來自 Google Published；全院重新整理後取得相同的已發布版本。':(dataSavedAt?'儲存時間：'+new Date(dataSavedAt).toLocaleString('zh-TW')+'。僅限同一瀏覽器；清除網站資料會移除儲存內容。':'匯入後保存在同一台電腦、同一個瀏覽器；不會同步至其他裝置。')))}">${icon(dataStorageWarning?'fa-triangle-exclamation':'fa-hard-drive')}${esc(dataStorageStatus)}</span>`;
   document.title=`${ORGS} ${rangeTxt()} 論文獎金統計分析`;
   TABS.forEach(([t],i)=>document.querySelector(`#p-${t} .cut`).textContent=`資料截至 ${cutTxt()}${i?'　'+i:''}`);
   TABS.forEach(([t])=>{document.getElementById('b-'+t).dataset.done='';});
