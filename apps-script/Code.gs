@@ -54,14 +54,44 @@ function validate_(candidate,existing){
   if(missing.length)throw Error('Historical applications missing: '+missing.slice(0,5).join(', '));
   return {total:candidate.length,added:candidate.length-existing.length};
 }
-/** Read-only. Public sharing of the content must be approved by the hospital. */
+/**
+ * Public endpoint returns aggregate-only metrics. Never disclose the raw
+ * Published tab, names, personnel identifiers, titles, author credits,
+ * signatures, or individual award amounts via doGet.
+ */
+function publicSummary_(rows) {
+  const YEAR = 0, ITEM = 5, CATEGORY = 6, AMOUNT = 7;
+  const cats = ['SCI','非SCI','國際性醫學會議','全國性醫學會議'];
+  const group = {};
+  function toCat(r) {
+    const v=String(r[CATEGORY]||'');
+    if(v.includes('會議'))return v.includes('國際')?'國際性醫學會議':'全國性醫學會議';
+    return v.startsWith('SCI')?'SCI':'非SCI';
+  }
+  rows.forEach(r=>{
+    const year=parseInt(String(r[YEAR]||'').slice(0,3),10);
+    if(!Number.isFinite(year)||year<100||year>200) return;
+    if(!group[year]) group[year]={year,papers:0,awardAmount:0,fees:0,feeAmount:0,
+       categories:Object.fromEntries(cats.map(x=>[x,{count:0,amount:0}]))};
+    const g=group[year],a=Number(String(r[AMOUNT]||'').replace(/,/g,''))||0;
+    if(String(r[ITEM]||'').includes('刊登費')){g.fees++;g.feeAmount+=a;}
+    else {g.papers++;g.awardAmount+=a;const c=toCat(r);g.categories[c].count++;g.categories[c].amount+=a;}
+  });
+  const years=Object.values(group).sort((a,b)=>a.year-b.year);
+  return {
+    ok:true,version:2,mode:'aggregate-only',updatedAt:updatedAt_(),
+    definitions:{papers:'論文獎勵申請紀錄筆數（非不重複論文篇數）',
+      awardAmount:'論文獎勵金額，單位元；不含刊登費',
+      categories:'依論文類別分為SCI、非SCI、國際性醫學會議、全國性醫學會議',
+      note:'資料僅供彙總統計；不得用於重建個別申請紀錄'},
+    years
+  };
+}
 function doGet(e) {
   try{
-    const rows=read_(TAB_PUBLISHED);
-    const result={ok:true,version:1,updatedAt:updatedAt_(),headers:HEADERS,rows};
+    const result=publicSummary_(read_(TAB_PUBLISHED));
     const callback=e&&e.parameter&&e.parameter.callback;
     if(callback){
-      // Safe identifier only; do not interpolate arbitrary JavaScript.
       if(!/^[A-Za-z_$][\w$]{0,70}$/.test(callback))throw Error('Invalid callback');
       return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+');')
         .setMimeType(ContentService.MimeType.JAVASCRIPT);
@@ -69,7 +99,7 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
   }catch(err){
-    return ContentService.createTextOutput(JSON.stringify({ok:false,error:String(err.message)}))
+    return ContentService.createTextOutput(JSON.stringify({ok:false,error:'Summary unavailable'}))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
