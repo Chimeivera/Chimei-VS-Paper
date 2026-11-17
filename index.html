@@ -402,7 +402,7 @@ function build(rows,file){
   for(const r0 of rows){
     const r={};for(const k in r0){const v=String(r0[k]??'');for(const c of v)if(/[-]/.test(c)&&!PUA[c])unk.add(c.codePointAt(0).toString(16).toUpperCase());r[k]=fixPUA(v);}
     const g=k=>r[k]||'';
-    const ap=g('申請者').trim().split(/\s+/);const id=ap[0];if(!id)continue;const nm=ap.slice(1).join('')||id;
+    const ap=g('申請者').trim().split(/\s+/);const sourceId=ap[0];if(!sourceId)continue;const id=sourceId==='B300W1'?'851139':sourceId;const nm=ap.slice(1).join('')||id;
     const sn=g('流水號').trim(),pub=g('發表日期').trim();
     let y=parseInt(sn.slice(0,3),10);if(!(y>0))y=parseInt(pub.slice(0,4),10)-1911;if(!(y>0))continue;
     const dept=g('申請者科別').trim().replace(/^\d+\s*/,'');
@@ -410,7 +410,7 @@ function build(rows,file){
     const s=g('主管簽章').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
     if(s){const sy=+s[3]-1911,sm=+s[1];if(sy>cutY||(sy===cutY&&sm>cutM)){cutY=sy;cutM=sm;}}
     const am=parseInt(g('申請序號').slice(4,6),10)||null;
-    const base={id,nm,y,sn,am,ym:pub,b:parseFloat(g('獎金'))||0,t:g('論文名稱').replace(/@@|\r?\n/g,' ').replace(/\s+/g,' ').trim(),j:g('發表之雜誌/期刊').trim()};
+    const base={id,sourceId,nm,y,sn,am,ym:pub,b:parseFloat(g('獎金'))||0,t:g('論文名稱').replace(/@@|\r?\n/g,' ').replace(/\s+/g,' ').trim(),j:g('發表之雜誌/期刊').trim()};
     if(/刊登費/.test(g('申請項目'))){fees.push(base);continue;}
     const c=g('論文類別').trim();
     const k=c.includes('會議')?(c.includes('國際')?'國際性醫學會議':'全國性醫學會議'):(c.startsWith('SCI')?'SCI':'非SCI');
@@ -481,7 +481,7 @@ R.ov=el=>{
      <div class="ph"><img src="${PHOTO}" alt="佳里奇美醫院院區外觀"></div>
      <svg class="ecg" viewBox="0 0 800 80" preserveAspectRatio="none" aria-hidden="true"><path class="base hero-line" d="${ECG_D}"/></svg></div>
    ${yearComparisonPanel()}
-   <div class="kpis">${mon('fa-sack-dollar','累計論文獎金','TOTAL AWARDS',w1(sum(D.recs)),'萬元')}${mon('fa-file-waveform','累計論文數','PAPERS',fmt(D.recs.length),'篇')}${mon('fa-user-doctor','獲獎醫師','PHYSICIANS',fmt(people),'人')}${mon('fa-hospital','涵蓋科別','DEPARTMENTS',fmt(dv),'個')}</div>${brief()}`;
+   <div class="kpis">${mon('fa-sack-dollar','累計論文獎金','TOTAL AWARDS',w1(sum(D.recs)),'萬元')}${mon('fa-file-waveform','累計論文數','PAPERS',fmt(D.recs.length),'篇')}${mon('fa-user-doctor','論文獎勵申請醫師','AWARD APPLICANTS',fmt(people),'人')}${mon('fa-hospital','涵蓋科別','DEPARTMENTS',fmt(dv),'個')}</div>${brief()}`;
 };
 R.yr=el=>{
   const bv=yearVals(D.recs,'b'),fv=yearVals(D.fees,'b'),tb=bv.map((x,i)=>x+fv[i]);const s=a=>a.reduce((x,y)=>x+y,0);
@@ -661,7 +661,7 @@ R.q=el=>{
 };
 function runQuery(q){
   q=fixPUA(String(q||'').trim());qState=q;const out=document.getElementById('qOut');if(!q){out.innerHTML='<p class="empty">請輸入人事號或姓名後按「查詢」。</p>';return;}
-  const ppl=peopleAgg();let hit=ppl.filter(p=>p.id.toUpperCase()===q.toUpperCase());if(!hit.length)hit=ppl.filter(p=>p.nm===q);if(!hit.length)hit=ppl.filter(p=>p.nm.includes(q)||p.id.toUpperCase().includes(q.toUpperCase()));
+  const ppl=peopleAgg();if(q.toUpperCase()==='B300W1')q='851139';let hit=ppl.filter(p=>p.id.toUpperCase()===q.toUpperCase());if(!hit.length)hit=ppl.filter(p=>p.nm===q);if(!hit.length)hit=ppl.filter(p=>p.nm.includes(q)||p.id.toUpperCase().includes(q.toUpperCase()));
   if(!hit.length){out.innerHTML=`<p class="empty">查無「${esc(q)}」的論文資料。請確認人事號或姓名後再查詢。</p>`;return;}
   if(hit.length>1){out.innerHTML=`<p class="empty" style="padding:6px 0 14px">找到 ${hit.length} 位符合的醫師，請選擇：</p><div class="pick">${hit.slice(0,40).map(p=>`<button data-id="${esc(p.id)}">${esc(p.nm)}｜${esc(p.id)}｜${esc(p.dv)}</button>`).join('')}</div>`;
     out.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{const x=ppl.find(p=>p.id===b.dataset.id);document.getElementById('qIn').value=x?x.nm:b.dataset.id;runQuery(b.dataset.id);});return;}
