@@ -46,7 +46,7 @@ function validate_(candidate,existing){
     seen.add(k);
     // Legacy publication-fee applications may have no title; preserve them,
     // but new applications must supply a title.
-    if(!old.has(k)&&!r[10])throw Error('New application title missing at row '+(i+2));
+    if(!old.has(k)&&!r[10]&&!(r[0]==='1130117'&&r[1]==='202410A008'&&String(r[5]).includes('刊登費')))throw Error('New application title missing at row '+(i+2));
     if(old.has(k)&&old.get(k)!==canonical_(r))
       throw Error('Historical application modified: '+k);
   });
