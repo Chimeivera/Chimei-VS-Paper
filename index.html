@@ -508,7 +508,7 @@ function heroLead(){
  <div class="deltas"><div><span class="lab">本年度論文獎勵紀錄</span><b class="big">${fmt(cur.length)}</b><span class="ft">筆・SCI ${fmt(cur.filter(r=>r.k==='SCI').length)} 筆</span></div>
  <div><span class="lab">本年度論文獎金</span><b class="big">${w1(sum(cur))}</b><span class="ft">萬元・刊登費 ${w1(sum(fee))} 萬元另計</span></div></div>
  <div class="chips"><span>${icon('fa-clock')} ${current} 年截至 ${D.cutM} 月，非全年數字</span>
- ${priorSame.length?`<span>${icon('fa-chart-line')} 同期獎金 ${diff(sum(priorSame),sum(curSame))}・紀錄數 ${diff(priorSame.length,curSame.length)}</span>`:''}
+ ${priorSame.length&&(sum(curSame)>sum(priorSame)||curSame.length>priorSame.length)?`<span>${icon('fa-chart-line')} 同期成長亮點：${sum(curSame)>sum(priorSame)?'獎金 '+diff(sum(priorSame),sum(curSame)):''}${sum(curSame)>sum(priorSame)&&curSame.length>priorSame.length?'・':''}${curSame.length>priorSame.length?'紀錄數 '+diff(priorSame.length,curSame.length):''}</span>`:''}
  <span>${icon('fa-calendar-check')} 完整年度比較：${Y()[0]}–${current-1} 年</span></div>`;
 }
 function yearComparisonPanel(){
@@ -519,27 +519,27 @@ function yearComparisonPanel(){
  if(!prior.length)return '';
  const b0=sum(prior),b1=sum(cur),n0=prior.length,n1=cur.length;
  const block=(label,now,old,isMoney)=>{
-  const delta=now-old,pct=old?Math.round((delta/old)*1000)/10:null;
-  const cls=delta>0?'up':delta<0?'dn':'neutral';
-  const sign=delta>0?'+':delta<0?'−':'';
-  const percent=pct===null?'無法計算':`${pct>0?'+':''}${pct}%`;
+  const delta=now-old;if(delta<=0||old<=0)return '';
+  const pct=Math.round(delta/old*1000)/10;
   const display=v=>isMoney?w1(v)+' 萬元':fmt(v)+' 筆';
   return `<div class="yoy-feature-card"><div class="yoy-feature-label">${label}｜較 ${y-1} 年同期</div>
-   <div class="yoy-feature-change ${cls}">${icon(delta>=0?'fa-arrow-trend-up':'fa-arrow-trend-down')} ${percent}</div>
-   <div class="yoy-feature-amount">${delta===0?'持平':`${sign}${display(Math.abs(delta))}`}</div>
+   <div class="yoy-feature-change up">${icon('fa-arrow-trend-up')} +${pct}%</div>
+   <div class="yoy-feature-amount">+${display(delta)}</div>
    <div class="yoy-feature-pair"><span>${y} 年 <b>${display(now)}</b></span><span>${y-1} 年 <b>${display(old)}</b></span></div></div>`;
  };
- return `<section class="yoy-feature" aria-label="${y} 年與 ${y-1} 年同期比較">
-   <div class="yoy-feature-head"><h3>${icon('fa-chart-line')} ${y} vs ${y-1} 年同期比較</h3><small>兩年度皆以 1–${m} 月申請紀錄計算</small></div>
-   <div class="yoy-feature-grid">${block('論文獎金',b1,b0,true)}${block('論文獎勵紀錄',n1,n0,false)}</div>
-   <div class="yoy-feature-foot">僅比較論文發表獎勵，不含刊登費；依申請序號月份計算。同年未滿全年，請勿直接與完整年度比較。</div></section>`;
+ const cards=[block('論文獎金',b1,b0,true),block('論文獎勵紀錄',n1,n0,false)].filter(Boolean);
+ if(!cards.length)return '';
+ return `<section class="yoy-feature" aria-label="${y} 年成長亮點">
+   <div class="yoy-feature-head"><h3>${icon('fa-chart-line')} ${y} 年同期成長亮點</h3><small>與 ${y-1} 年 1–${m} 月比較</small></div>
+   <div class="yoy-feature-grid">${cards.join('')}</div>
+   <div class="yoy-feature-foot">此區僅呈現正成長項目，並非完整同期比較；完整數據請見「年度統計」。論文獎金不含刊登費，依申請序號月份計算。</div></section>`;
 }
 function briefData(){
   const out=[],full=Y().filter(y=>y!==LAST()),L=LAST(),pct=(x,y)=>Math.round((y-x)/x*100);
   const chip=p=>`<em class="${p>=0?'up':'dn'}">${icon(p>=0?'fa-arrow-trend-up':'fa-arrow-trend-down')}${p>=0?'+':''}${p}%</em>`;
   // 1 今年同期
   if(D.recs.some(r=>r.am)&&Y().includes(L-1)){const m=D.cutM;const cur=D.recs.filter(r=>r.y===L&&r.am&&r.am<=m),prv=D.recs.filter(r=>r.y===L-1&&r.am&&r.am<=m);
-    if(prv.length){const p=pct(sum(prv),sum(cur));out.push(['fa-gauge-high','今年進度',`${L} 年 1–${m} 月獎金 <b>${w1(sum(cur))}</b> 萬元，${L-1} 年同期 ${w1(sum(prv))} 萬元 ${chip(p)}；篇數 <b>${cur.length}</b> 篇（去年同期 ${prv.length} 篇）`]);}}
+    if(prv.length){const p=pct(sum(prv),sum(cur));out.push(['fa-gauge-high','今年進度',`${L} 年 1–${m} 月獎金 <b>${w1(sum(cur))}</b> 萬元；論文獎勵紀錄 <b>${cur.length}</b> 筆${p>0?`；獎金較去年同期 ${chip(p)}`:''}`]);}}
   // 2 歷年高點
   if(full.length){const bv=full.map(y=>sum(D.recs.filter(r=>r.y===y))),mx=Math.max(...bv),my=full[bv.indexOf(mx)],last=full[full.length-1];
     out.push(['fa-trophy','歷年高點',my===last?`<b>${my}</b> 年 <b>${w1(mx)}</b> 萬元，為 ${full[0]}–${last} 年最高（創新高）`:`最高為 <b>${my}</b> 年 <b>${w1(mx)}</b> 萬元；${last} 年為 ${w1(bv[bv.length-1])} 萬元`]);}
