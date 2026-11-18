@@ -622,36 +622,36 @@ R.ov=el=>{
  const depPeak=Math.max(1,...activeDepartments.map(x=>x.award));
  const highestFull=full.map(year=>({year,amount:sum(D.recs.filter(r=>r.y===year))})).sort((a,b)=>b.amount-a.amount)[0];
  const latestTitle=y+' 年研究成果｜主管總覽';
- const kpi=(label,value,unit,detail,ic,accent='')=>\`<article class="exec-kpi \${accent}"><div class="exec-kpi-label">\${icon(ic)}<span>\${label}</span></div><div class="exec-kpi-value">\${value}<small>\${unit}</small></div><p>\${detail}</p></article>\`;
- const bars=(items,field,max,format)=>items.map(x=>\`<div class="exec-bar-row \${x.year===y?'is-current':''}"><span class="exec-bar-name">\${x.year} 年\${x.year===y?'<sup>*</sup>':''}</span><div class="exec-bar-track"><span style="width:\${Math.max(x[field]?2:0,Math.round(x[field]/max*100))}%"></span></div><b>\${format(x[field])}</b></div>\`).join('');
- const drows=activeDepartments.length?activeDepartments.map((x,i)=>\`<div class="exec-dept-row"><span class="exec-rank">\${String(i+1).padStart(2,'0')}</span><span class="exec-dept-name" title="\${esc(x.name)}">\${esc(x.name)}</span><span class="exec-dept-bar"><i style="width:\${Math.round(x.award/depPeak*100)}%"></i></span><b>\${w1(x.award)} 萬</b></div>\`).join(''):'<p class="exec-empty">本年度尚無科別獎勵紀錄。</p>';
- el.innerHTML=\`<section class="exec-dashboard" aria-label="院級主管研究成果總覽">
- <div class="exec-heading"><div><div class="exec-eyebrow">\${icon('fa-chart-line')} EXECUTIVE OVERVIEW · 研究成果</div><h2>\${latestTitle}</h2><p>\${rangeTxt()}｜最新申請資料截至 \${cutTxt()}；\${y} 年尚非完整年度</p></div><div class="exec-live"><span></span> \${esc(dataStorageStatus)}</div></div>
+ const kpi=(label,value,unit,detail,ic,accent='')=>`<article class="exec-kpi ${accent}"><div class="exec-kpi-label">${icon(ic)}<span>${label}</span></div><div class="exec-kpi-value">${value}<small>${unit}</small></div><p>${detail}</p></article>`;
+ const bars=(items,field,max,format)=>items.map(x=>`<div class="exec-bar-row ${x.year===y?'is-current':''}"><span class="exec-bar-name">${x.year} 年${x.year===y?'<sup>*</sup>':''}</span><div class="exec-bar-track"><span style="width:${Math.max(x[field]?2:0,Math.round(x[field]/max*100))}%"></span></div><b>${format(x[field])}</b></div>`).join('');
+ const drows=activeDepartments.length?activeDepartments.map((x,i)=>`<div class="exec-dept-row"><span class="exec-rank">${String(i+1).padStart(2,'0')}</span><span class="exec-dept-name" title="${esc(x.name)}">${esc(x.name)}</span><span class="exec-dept-bar"><i style="width:${Math.round(x.award/depPeak*100)}%"></i></span><b>${w1(x.award)} 萬</b></div>`).join(''):'<p class="exec-empty">本年度尚無科別獎勵紀錄。</p>';
+ el.innerHTML=`<section class="exec-dashboard" aria-label="院級主管研究成果總覽">
+ <div class="exec-heading"><div><div class="exec-eyebrow">${icon('fa-chart-line')} EXECUTIVE OVERVIEW · 研究成果</div><h2>${latestTitle}</h2><p>${rangeTxt()}｜最新申請資料截至 ${cutTxt()}；${y} 年尚非完整年度</p></div><div class="exec-live"><span></span> ${esc(dataStorageStatus)}</div></div>
  <div class="exec-kpis">
- \${kpi('本年度論文獎勵',fmt(cur.length),'筆','依申請紀錄計算，不等同不同論文篇數','fa-file-waveform','primary')}
- \${kpi('本年度論文獎金',w1(sum(cur)),'萬元','刊登費另計 '+w1(sum(fee))+' 萬元','fa-sack-dollar')}
- \${kpi('本年度 SCI 研究',fmt(sci),'筆','占本年度論文獎勵紀錄 '+rate.toFixed(1)+'%','fa-flask')}
- \${kpi('累計參與申請醫師',fmt(people),'人','依已確認的人員對應去重統計','fa-user-doctor')}
+ ${kpi('本年度論文獎勵',fmt(cur.length),'筆','依申請紀錄計算，不等同不同論文篇數','fa-file-waveform','primary')}
+ ${kpi('本年度論文獎金',w1(sum(cur)),'萬元','刊登費另計 '+w1(sum(fee))+' 萬元','fa-sack-dollar')}
+ ${kpi('本年度 SCI 研究',fmt(sci),'筆','占本年度論文獎勵紀錄 '+rate.toFixed(1)+'%','fa-flask')}
+ ${kpi('累計參與申請醫師',fmt(people),'人','依已確認的人員對應去重統計','fa-user-doctor')}
  </div>
  <div class="exec-body">
-  <section class="exec-panel exec-history"><div class="exec-panel-title"><div><h3>歷年論文獎金趨勢</h3><p>110–\${y} 年，單位：萬元</p></div><span class="exec-pill">年度觀察</span></div>
-   <div class="exec-bars">\${bars(historical,'award',peak,v=>w1(v)+' 萬')}</div>
-   <p class="exec-footnote">* \${y} 年為尚未結束的年度，不能直接與完整年度比較。歷年數字為論文獎金，不含刊登費。</p>
+  <section class="exec-panel exec-history"><div class="exec-panel-title"><div><h3>歷年論文獎金趨勢</h3><p>110–${y} 年，單位：萬元</p></div><span class="exec-pill">年度觀察</span></div>
+   <div class="exec-bars">${bars(historical,'award',peak,v=>w1(v)+' 萬')}</div>
+   <p class="exec-footnote">* ${y} 年為尚未結束的年度，不能直接與完整年度比較。歷年數字為論文獎金，不含刊登費。</p>
   </section>
-  <section class="exec-panel exec-departments"><div class="exec-panel-title"><div><h3>\${y} 年主要研究科別</h3><p>依本年度論文獎勵金額排序 · 前 5 科別</p></div><span class="exec-pill">重點科別</span></div>
-    <div class="exec-dept-list">\${drows}</div>
+  <section class="exec-panel exec-departments"><div class="exec-panel-title"><div><h3>${y} 年主要研究科別</h3><p>依本年度論文獎勵金額排序 · 前 5 科別</p></div><span class="exec-pill">重點科別</span></div>
+    <div class="exec-dept-list">${drows}</div>
     <p class="exec-footnote">科別依申請資料歸屬，為申請紀錄之統計，不代表全院所有研究產出。</p>
   </section>
  </div>
- <section class="exec-insights" aria-label="院級管理重點"><h3>\${icon('fa-clipboard-check')} 院級管理重點</h3>
+ <section class="exec-insights" aria-label="院級管理重點"><h3>${icon('fa-clipboard-check')} 院級管理重點</h3>
  <div class="exec-insight-grid">
-  <div><span>本年度 SCI 比例</span><strong>\${rate.toFixed(1)}%</strong><small>\${fmt(sci)} / \${fmt(cur.length)} 筆論文獎勵申請紀錄</small></div>
-  <div><span>歷年完整年度獎金高點</span><strong>\${highestFull?highestFull.year+' 年':'—'}</strong><small>\${highestFull?w1(highestFull.amount)+' 萬元（不含刊登費）':'尚無可比較的完整年度'}</small></div>
-  <div><span>本年度總研究獎勵相關支出</span><strong>\${w1(sum(cur)+sum(fee))} 萬</strong><small>論文獎金加刊登費補助（申請金額）</small></div>
+  <div><span>本年度 SCI 比例</span><strong>${rate.toFixed(1)}%</strong><small>${fmt(sci)} / ${fmt(cur.length)} 筆論文獎勵申請紀錄</small></div>
+  <div><span>歷年完整年度獎金高點</span><strong>${highestFull?highestFull.year+' 年':'—'}</strong><small>${highestFull?w1(highestFull.amount)+' 萬元（不含刊登費）':'尚無可比較的完整年度'}</small></div>
+  <div><span>本年度總研究獎勵相關支出</span><strong>${w1(sum(cur)+sum(fee))} 萬</strong><small>論文獎金加刊登費補助（申請金額）</small></div>
  </div>
  </section>
  <div class="exec-disclaimer">資料口徑：網站以論文獎勵申請紀錄計數；「申請金額」不等於核銷或實際撥付。詳細年度、科別、個人及論文分類可由上方分頁查詢。</div>
- </section>\`;
+ </section>`;
 };
 R.yr=el=>{
   const bv=yearVals(D.recs,'b'),fv=yearVals(D.fees,'b'),tb=bv.map((x,i)=>x+fv[i]);const s=a=>a.reduce((x,y)=>x+y,0);
