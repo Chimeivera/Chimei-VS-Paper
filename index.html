@@ -449,31 +449,30 @@ function heroLead(){
   const m=months.length?Math.max(...months):null;
   const current=m?allCurrent.filter(r=>validMonth(r.am)&&r.am<=m):[];
   const prior=m?D.recs.filter(r=>r.y===prev&&validMonth(r.am)&&r.am<=m):[];
-  if(!prior.length||!current.length){
-    return `<h2 class="hl">${y} 年研究成果</h2><div class="deltas"><div><span class="lab">SCI 論文獎勵紀錄</span><b class="big">${fmt(allCurrent.filter(r=>r.k==='SCI').length)}</b><span class="ft">筆・本年度累計（尚無同期可比資料）</span></div><div><span class="lab">論文獎金</span><b class="big">${w1(sum(allCurrent))}</b><span class="ft">萬元・本年度統計</span></div></div>`;
-  }
-  // SCI 量與年增率直接放大；採相同申請月份比較。數據隨共用資料同步更新。
   const sciCount=rs=>rs.filter(r=>r.k==='SCI').length;
+  if(!prior.length||!current.length){
+    return `<h2 class="hl">${y} 年 SCI 論文獎勵成果</h2><div class="deltas"><div><span class="lab">本年度 SCI 紀錄</span><b class="big">${fmt(sciCount(allCurrent))}<span style="font-size:.38em;margin-left:8px">筆</span></b><span class="ft">本年度累計</span></div><div><span class="lab">論文獎金</span><b class="big">${w1(sum(allCurrent))}</b><span class="ft">萬元・本年度統計</span></div></div>`;
+  }
   const cy=sciCount(current),py=sciCount(prior);
-  const sciPct=py>0?(cy-py)/py*100:null;
   const sciShareCurrent=cy/current.length*100,sciSharePrior=py/prior.length*100;
-  const growthText=sciPct===null?'去年同期 0 筆，無法計算年增率':(sciPct>0?'↑ +':sciPct<0?'↓ ':'→ ')+sciPct.toFixed(1)+'%';
-  const growthColor=sciPct>0?'var(--cyan-hi)':sciPct<0?'#FF8A6B':'var(--deck-ink)';
-  const other=[];
-  const awardGrowth=sum(prior)>0?(sum(current)-sum(prior))/sum(prior)*100:0;
-  if(awardGrowth>0)other.push(`<span>${icon('fa-arrow-trend-up')} 論文獎金總額 +${awardGrowth.toFixed(1)}%</span>`);
+  const shareChange=sciShareCurrent-sciSharePrior;
   const avgCurrent=sum(current)/current.length,avgPrior=sum(prior)/prior.length;
   const avgGrowth=avgPrior>0?(avgCurrent-avgPrior)/avgPrior*100:0;
-  if(avgGrowth>0)other.push(`<span>${icon('fa-arrow-trend-up')} 平均每筆獎金 +${avgGrowth.toFixed(1)}%</span>`);
-  const shareChange=sciShareCurrent-sciSharePrior;
-  if(shareChange>0)other.push(`<span>${icon('fa-arrow-trend-up')} SCI 占比 +${shareChange.toFixed(1)} 個百分點</span>`);
+  const awardGrowth=sum(prior)>0?(sum(current)-sum(prior))/sum(prior)*100:0;
+  const markers=[];
+  if(shareChange>0)markers.push(`<span>${icon('fa-arrow-trend-up')} SCI 占比提升 +${shareChange.toFixed(1)} 個百分點</span>`);
+  if(avgGrowth>0)markers.push(`<span>${icon('fa-arrow-trend-up')} 平均每筆獎金 +${avgGrowth.toFixed(1)}%</span>`);
+  if(awardGrowth>0)markers.push(`<span>${icon('fa-arrow-trend-up')} 獎金總額 +${awardGrowth.toFixed(1)}%</span>`);
+  const countGrowth=py>0?(cy-py)/py*100:null;
+  if(countGrowth!==null&&countGrowth>0)markers.push(`<span>${icon('fa-arrow-trend-up')} SCI 紀錄數 +${countGrowth.toFixed(1)}%</span>`);
+  const kpi2Label=shareChange>0?'SCI 獎勵紀錄占比':'SCI 獎勵紀錄占比';
   return `<h2 class="hl">${y} 年 SCI 論文獎勵成果</h2>
-    <div class="deltas">
-      <div><span class="lab">今年 SCI 論文獎勵紀錄</span><b class="big" style="font-size:clamp(38px,4vw,58px);white-space:nowrap;">${fmt(cy)}<span style="font-size:.42em;margin-left:5px;">筆</span></b><span class="ft">去年同期 ${fmt(py)} 筆｜${cy>=py?'增加':'減少'} ${fmt(Math.abs(cy-py))} 筆</span></div>
-      <div><span class="lab">SCI 紀錄同期成長率</span><b class="big" style="font-size:clamp(27px,3.5vw,48px);white-space:nowrap;color:${growthColor};">${growthText}</b><span class="ft">${prev} 年 ${fmt(py)} 筆 → ${y} 年 ${fmt(cy)} 筆</span></div>
+    <div class="deltas" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 28px;max-width:590px">
+      <div><span class="lab">本年度 SCI 紀錄</span><b class="big" style="font-size:clamp(38px,4vw,58px);white-space:nowrap;">${fmt(cy)}<span style="font-size:.38em;margin-left:7px;">筆</span></b><span class="ft">截至 ${m} 月・本年度累計</span></div>
+      <div><span class="lab">${kpi2Label}</span><b class="big" style="font-size:clamp(35px,3.8vw,54px);white-space:nowrap;">${sciShareCurrent.toFixed(1)}%</b><span class="ft">去年同期 ${sciSharePrior.toFixed(1)}%</span></div>
     </div>
-    ${other.length?'<div class="chips" style="margin-top:14px;">'+other.join('')+'</div>':''}
-    <p style="font-size:12px;line-height:1.6;color:var(--deck-ink2);margin:16px 0 0;">${prev} 與 ${y} 申請年度 1–${m} 月同期比較｜統計為 SCI 論文獎勵申請紀錄，非按實際發表日期計算之論文篇數</p>`;
+    ${markers.length?'<div class="chips" style="margin-top:14px;">'+markers.join('')+'</div>':''}
+    <p style="font-size:12px;line-height:1.6;color:var(--deck-ink2);margin:16px 0 0;">${prev} 與 ${y} 申請年度 1–${m} 月同期比較｜SCI 獎勵申請紀錄，非依實際發表日期統計；完整增減請見年度統計</p>`;
 }
 
 function briefData(){
