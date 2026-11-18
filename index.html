@@ -339,6 +339,7 @@ const shortCat=c=>{if(c.includes('會議'))return (c.includes('國際')?'國際'
   const s=c.startsWith('SCI')?'SCI':'非SCI';const t=c.includes('病例報告')?'病例報告':c.includes('研究論文')?'研究論文':'文章';return `${s} ${t}`+(/＜\s*1/.test(c)?'（IF＜1.0）':/≧/.test(c)?'（IF≧1.0或前50%）':'');};
 
 let D=null,dl=null;
+let sharedStatus='原始內建資料',sharedDetail='';
 function build(rows,file){
   const recs=[],fees=[],latest={};let cutY=0,cutM=0;const unk=new Set();
   for(const r0 of rows){
@@ -389,7 +390,7 @@ function show(id){cur=id;TABS.forEach(([t])=>{const on=t===id;document.getElemen
   renderTab(id);window.scrollTo({top:0});}
 function renderAll(){
   document.getElementById('hTitle').innerHTML=`<span class="yr">${Y()[0]}–${LAST()}<small>年度</small></span><span class="nm">論文獎金統計分析</span>`;
-  document.getElementById('hSub').innerHTML=`<span>${icon('fa-clock')}資料截至 ${cutTxt()}</span><span class="fn">${icon('fa-file-lines')}${esc(D.file)}</span><span>${icon('fa-database')}計入 ${fmt(D.recs.length)} 筆</span>`;
+  document.getElementById('hSub').innerHTML=`<span>${icon('fa-clock')}資料截至 ${cutTxt()}</span><span class="fn">${icon('fa-file-lines')}${esc(D.file)}</span><span>${icon('fa-database')}計入 ${fmt(D.recs.length)} 筆</span><span id="sharedStatus" role="status" title="${esc(sharedDetail)}">${icon(sharedStatus==='全院共用資料已同步'?'fa-circle-check':'fa-database')}${esc(sharedStatus)}</span>`;
   document.title=`${ORGS} ${rangeTxt()} 論文獎金統計分析`;
   TABS.forEach(([t],i)=>document.querySelector(`#p-${t} .cut`).textContent=`資料截至 ${cutTxt()}${i?'　'+i:''}`);
   TABS.forEach(([t])=>{document.getElementById('b-'+t).dataset.done='';});
@@ -634,7 +635,7 @@ fileIn.onchange=async()=>{
       if(h.includes('論文類別')&&h.includes('申請者')){paper=rows;break;}}
     if(!paper){toast('找不到論文資料：工作表需含「申請者」與「論文類別」欄位。');return;}
     const nd=build(paper,f.name);if(!nd.recs.length){toast('檔案裡沒有可計入的論文資料，請確認是否為論文申請匯出檔。');return;}
-    D=nd;qState='';Object.values(charts).forEach(c=>c.destroy());for(const k in charts)delete charts[k];renderAll();
+    D=nd;sharedStatus='目前顯示本機匯入資料';sharedDetail='本機匯入不會更新全院共用資料';qState='';Object.values(charts).forEach(c=>c.destroy());for(const k in charts)delete charts[k];renderAll();
     toast(`已載入 ${f.name}：論文 ${fmt(D.recs.length)} 筆、刊登費 ${fmt(D.fees.length)} 筆`+(D.unknownPUA.length?`。發現未對應的造字 ${D.unknownPUA.map(c=>'U+'+c).join('、')}，姓名可能顯示為方框`:''),D.unknownPUA.length?9000:3600);
   }catch(e){console.error(e);toast('讀取檔案失敗：'+(e.message||e));}
 };
@@ -813,6 +814,48 @@ document.getElementById('btnPpt').onclick=async()=>{
 // ---------- init
 D=build(RAW.r.map(a=>Object.fromEntries(RAW.h.map((h,i)=>[h,a[i]]))),'110-115年度醫師論文申請.xls');
 renderAll();show('ov');
+// Shared data is read-only; publishing remains controlled in Google Apps Script.
+// The original 9 tabs, hospital photo, ECG animation and import controls are preserved.
+const SHARED_SOURCE='https://script.google.com/macros/s/AKfycbzMLf-M-vpokIyYDofRtOW-PJWkz14_N3wu-NWQ6_KNVwlAveBplCAw2rcx2y3kJlKF/exec';
+let sharedSeq=0;
+function syncSharedDashboard(){
+  const callbackName='chimeiPaperShared'+(++sharedSeq);
+  const script=document.createElement('script');
+  let finished=false;
+  sharedStatus='讀取全院共用資料中';sharedDetail='';renderAll();
+  const timeout=setTimeout(()=>done(null,'連線逾時，暫時保留目前資料。'),15000);
+  function done(payload,error){
+    if(finished)return;
+    finished=true;clearTimeout(timeout);script.remove();
+    try{delete window[callbackName]}catch(_){window[callbackName]=undefined}
+    if(error){
+      sharedStatus='共用資料尚未同步';sharedDetail=error;
+      renderAll();toast('同步失敗：'+error,8000);return;
+    }
+    try{
+      if(!payload||payload.ok!==true||payload.mode!=='dashboard'||!Array.isArray(payload.headers)||!Array.isArray(payload.rows)||!payload.rows.length){
+        throw new Error('共用資料格式不符，請確認 Apps Script 已部署 dashboard 版本。');
+      }
+      const rows=payload.rows.map(arr=>Object.fromEntries(payload.headers.map((h,i)=>[h,String(arr[i]??'')])));
+      const next=build(rows,'Google共用資料庫｜Published');
+      if(!next.recs.length)throw new Error('共用資料沒有有效的論文紀錄。');
+      D=next;sharedStatus='全院共用資料已同步';sharedDetail='Google Published 資料表｜'+rows.length+' 筆原始申請紀錄';
+      qState='';
+      Object.values(charts).forEach(c=>c.destroy());
+      for(const key in charts)delete charts[key];
+      renderAll();
+      toast('共用資料已更新：'+fmt(rows.length)+' 筆申請紀錄',3600);
+    }catch(e){
+      sharedStatus='共用資料尚未同步';sharedDetail=e.message;
+      renderAll();toast('同步失敗：'+e.message,8000);
+    }
+  }
+  window[callbackName]=payload=>done(payload);
+  script.onerror=()=>done(null,'無法連接 Google 共用資料庫。');
+  script.src=SHARED_SOURCE+'?view=dashboard&callback='+encodeURIComponent(callbackName)+'&t='+Date.now();
+  document.head.appendChild(script);
+}
+syncSharedDashboard();
 const reTheme=()=>{['tr','dept','ppl','cls'].forEach(t=>document.getElementById('b-'+t).dataset.done='');if(['tr','dept','ppl','cls'].includes(cur))renderTab(cur);};
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',reTheme);
 new MutationObserver(reTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
