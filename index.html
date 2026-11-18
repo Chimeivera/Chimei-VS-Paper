@@ -452,26 +452,26 @@ function heroLead(){
   if(!prior.length||!current.length){
     return `<h2 class="hl">${y} 年研究成果</h2><div class="deltas"><div><span class="lab">論文獎勵紀錄</span><b class="big">${fmt(allCurrent.length)}</b><span class="ft">筆・本年度統計</span></div><div><span class="lab">論文獎金</span><b class="big">${w1(sum(allCurrent))}</b><span class="ft">萬元・本年度統計</span></div></div>`;
   }
+  // 大卡片僅凸顯同期成長項目；完整正負變化仍保留在其他統計頁。
   const sciCount=rs=>rs.filter(r=>r.k==='SCI').length;
   const share=rs=>sciCount(rs)/rs.length*100;
   const cs=share(current),ps=share(prior);
   const ca=sum(current)/current.length,pa=sum(prior)/prior.length;
-  const change=(ca-pa)/pa*100;
-  const indicator=(name,diff,valueFrom,valueTo,unit,isPp)=>{
-    const positive=diff>0,negative=diff<0;
-    const cls=positive?'up':negative?'dn':'';
-    const symbol=positive?'fa-caret-up':negative?'fa-caret-down':'fa-minus';
-    return `<div><span class="lab">${name}</span><b class="big ${cls}">${icon(symbol)}${isPp?Math.abs(diff).toFixed(1):Math.abs(diff).toFixed(1)+'%'}</b><span class="ft">${valueFrom} → ${valueTo} ${unit}</span></div>`;
-  };
-  const countDelta=(current.length-prior.length)/prior.length*100;
-  const awardDelta=sum(prior)?(sum(current)-sum(prior))/sum(prior)*100:0;
-  const trend=p=>(p>0?'↑ +':p<0?'↓ ':'→ ')+p.toFixed(1)+'%';
-  return `<h2 class="hl">${y} 年研究成果｜同期趨勢</h2>
-    <div class="deltas">
-    ${indicator('SCI 論文獎勵占比',cs-ps,ps.toFixed(1)+'%',cs.toFixed(1)+'%','',true)}
-    ${indicator('平均每筆論文獎金',change,w1(pa),w1(ca),'萬元',false)}
-    </div>
-    <p style="font-size:12px;line-height:1.6;color:var(--deck-ink2);margin:17px 0 0;">${prev} 與 ${y} 年 1–${m} 月同期比較｜獎勵紀錄 ${trend(countDelta)}・獎金總額 ${trend(awardDelta)}</p>`;
+  const metrics=[
+    {name:'SCI 論文獎勵占比',diff:cs-ps,from:ps.toFixed(1)+'%',to:cs.toFixed(1)+'%',suffix:' 百分點'},
+    {name:'平均每筆論文獎金',diff:pa>0?(ca-pa)/pa*100:0,from:w1(pa)+' 萬元',to:w1(ca)+' 萬元',suffix:'%'},
+    {name:'論文獎金總額',diff:sum(prior)>0?(sum(current)-sum(prior))/sum(prior)*100:0,from:w1(sum(prior))+' 萬元',to:w1(sum(current))+' 萬元',suffix:'%'},
+    {name:'論文獎勵筆數',diff:(current.length-prior.length)/prior.length*100,from:fmt(prior.length)+' 筆',to:fmt(current.length)+' 筆',suffix:'%'}
+  ].filter(x=>Number.isFinite(x.diff)&&x.diff>0);
+  if(!metrics.length){
+    return `<h2 class="hl">${y} 年研究成果</h2><p style="font-size:16px;color:var(--deck-ink);margin:14px 0;">目前同期比較無上升指標</p><p style="font-size:13px;color:var(--deck-ink2);">${prev} 與 ${y} 年 1–${m} 月同期比較，詳細結果請見年度統計與趨勢頁。</p>`;
+  }
+  const cards=metrics.slice(0,2).map(x=>`<div><span class="lab">${x.name}</span><b class="big">${icon('fa-caret-up')}+${x.diff.toFixed(1)}${x.suffix}</b><span class="ft">${x.from} → ${x.to}</span></div>`).join('');
+  const more=metrics.slice(2).map(x=>`<span>${icon('fa-arrow-trend-up')} ${x.name} +${x.diff.toFixed(1)}${x.suffix}</span>`).join('');
+  return `<h2 class="hl">${y} 年研究成果｜同期成長亮點</h2>
+    <div class="deltas">${cards}</div>
+    ${more?'<div class="chips" style="margin-top:14px;">'+more+'</div>':''}
+    <p style="font-size:12px;line-height:1.6;color:var(--deck-ink2);margin:16px 0 0;">${prev} 與 ${y} 年 1–${m} 月同期比較｜僅呈現成長指標</p>`;
 }
 
 function briefData(){
