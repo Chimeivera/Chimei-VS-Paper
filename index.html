@@ -441,12 +441,39 @@ R.yr=el=>{
 };
 function yoy(a,b,y){if(a==null)return '<span class="dl">—</span>';if(y===LAST())return '<span class="dl" title="未滿一年度，不比較">未滿年</span>';
   const p=Math.round((b-a)/a*100);return `<span class="dl ${p>=0?'up':'dn'}">${icon(p>=0?'fa-arrow-trend-up':'fa-arrow-trend-down')}${p>=0?'+':''}${p}%</span>`;}
-function heroLead(){const full=Y().filter(y=>y!==LAST());if(full.length<2)return `<h2 class="hl">${rangeTxt()} 論文獎金</h2>`;
-  const a=full[0],b=full[full.length-1],ba=sum(D.recs.filter(r=>r.y===a)),bb=sum(D.recs.filter(r=>r.y===b)),na=D.recs.filter(r=>r.y===a).length,nb=D.recs.filter(r=>r.y===b).length;
-  const dl=(x,y)=>{const p=Math.round((y-x)/x*100);return `<b class="big ${p>=0?'up':'dn'}">${icon(p>=0?'fa-caret-up':'fa-caret-down')}${Math.abs(p)}%</b>`;};
-  return `<h2 class="hl">${a} → ${b} 年變化</h2>
-    <div class="deltas"><div><span class="lab">論文獎金</span>${dl(ba,bb)}<span class="ft">${w1(ba)} → ${w1(bb)} 萬元</span></div>
-    <div><span class="lab">論文篇數</span>${dl(na,nb)}<span class="ft">${fmt(na)} → ${fmt(nb)} 篇</span></div></div>`;}
+
+function heroLead(){
+  const y=LAST(),prev=y-1,validMonth=m=>Number.isInteger(m)&&m>=1&&m<=12;
+  const allCurrent=D.recs.filter(r=>r.y===y);
+  const months=allCurrent.map(r=>r.am).filter(validMonth);
+  const m=months.length?Math.max(...months):null;
+  const current=m?allCurrent.filter(r=>validMonth(r.am)&&r.am<=m):[];
+  const prior=m?D.recs.filter(r=>r.y===prev&&validMonth(r.am)&&r.am<=m):[];
+  if(!prior.length||!current.length){
+    return `<h2 class="hl">${y} 年研究成果</h2><div class="deltas"><div><span class="lab">論文獎勵紀錄</span><b class="big">${fmt(allCurrent.length)}</b><span class="ft">筆・本年度統計</span></div><div><span class="lab">論文獎金</span><b class="big">${w1(sum(allCurrent))}</b><span class="ft">萬元・本年度統計</span></div></div>`;
+  }
+  const sciCount=rs=>rs.filter(r=>r.k==='SCI').length;
+  const share=rs=>sciCount(rs)/rs.length*100;
+  const cs=share(current),ps=share(prior);
+  const ca=sum(current)/current.length,pa=sum(prior)/prior.length;
+  const change=(ca-pa)/pa*100;
+  const indicator=(name,diff,valueFrom,valueTo,unit,isPp)=>{
+    const positive=diff>0,negative=diff<0;
+    const cls=positive?'up':negative?'dn':'';
+    const symbol=positive?'fa-caret-up':negative?'fa-caret-down':'fa-minus';
+    return `<div><span class="lab">${name}</span><b class="big ${cls}">${icon(symbol)}${isPp?Math.abs(diff).toFixed(1):Math.abs(diff).toFixed(1)+'%'}</b><span class="ft">${valueFrom} → ${valueTo} ${unit}</span></div>`;
+  };
+  const countDelta=(current.length-prior.length)/prior.length*100;
+  const awardDelta=sum(prior)?(sum(current)-sum(prior))/sum(prior)*100:0;
+  const trend=p=>(p>0?'↑ +':p<0?'↓ ':'→ ')+p.toFixed(1)+'%';
+  return `<h2 class="hl">${y} 年研究成果｜同期趨勢</h2>
+    <div class="deltas">
+    ${indicator('SCI 論文獎勵占比',cs-ps,ps.toFixed(1)+'%',cs.toFixed(1)+'%','',true)}
+    ${indicator('平均每筆論文獎金',change,w1(pa),w1(ca),'萬元',false)}
+    </div>
+    <p style="font-size:12px;line-height:1.6;color:var(--deck-ink2);margin:17px 0 0;">${prev} 與 ${y} 年 1–${m} 月同期比較｜獎勵紀錄 ${trend(countDelta)}・獎金總額 ${trend(awardDelta)}</p>`;
+}
+
 function briefData(){
   const out=[],full=Y().filter(y=>y!==LAST()),L=LAST(),pct=(x,y)=>Math.round((y-x)/x*100);
   const chip=p=>`<em class="${p>=0?'up':'dn'}">${icon(p>=0?'fa-arrow-trend-up':'fa-arrow-trend-down')}${p>=0?'+':''}${p}%</em>`;
