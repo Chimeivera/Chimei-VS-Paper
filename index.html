@@ -458,7 +458,7 @@ function heroLead(){
   const cs=share(current),ps=share(prior);
   const ca=sum(current)/current.length,pa=sum(prior)/prior.length;
   const metrics=[
-    {name:'SCI 論文獎勵占比',diff:cs-ps,from:ps.toFixed(1)+'%',to:cs.toFixed(1)+'%',suffix:' 百分點'},
+    {name:'SCI 論文獎勵占比成長率',diff:ps>0?(cs-ps)/ps*100:0,from:ps.toFixed(1)+'%',to:cs.toFixed(1)+'%',suffix:'%'},
     {name:'平均每筆論文獎金',diff:pa>0?(ca-pa)/pa*100:0,from:w1(pa)+' 萬元',to:w1(ca)+' 萬元',suffix:'%'},
     {name:'論文獎金總額',diff:sum(prior)>0?(sum(current)-sum(prior))/sum(prior)*100:0,from:w1(sum(prior))+' 萬元',to:w1(sum(current))+' 萬元',suffix:'%'},
     {name:'論文獎勵筆數',diff:(current.length-prior.length)/prior.length*100,from:fmt(prior.length)+' 筆',to:fmt(current.length)+' 筆',suffix:'%'}
@@ -466,7 +466,7 @@ function heroLead(){
   if(!metrics.length){
     return `<h2 class="hl">${y} 年研究成果</h2><p style="font-size:16px;color:var(--deck-ink);margin:14px 0;">目前同期比較無上升指標</p><p style="font-size:13px;color:var(--deck-ink2);">${prev} 與 ${y} 年 1–${m} 月同期比較，詳細結果請見年度統計與趨勢頁。</p>`;
   }
-  const cards=metrics.slice(0,2).map(x=>`<div><span class="lab">${x.name}</span><b class="big">${icon('fa-caret-up')}+${x.diff.toFixed(1)}${x.suffix}</b><span class="ft">${x.from} → ${x.to}</span></div>`).join('');
+  const cards=metrics.slice(0,2).map(x=>`<div><span class="lab">${x.name}</span><b class="big" style="font-size:clamp(27px,3.5vw,48px);white-space:nowrap;">${icon('fa-caret-up')}+${x.diff.toFixed(1)}${x.suffix}</b><span class="ft">${x.from} → ${x.to}</span></div>`).join('');
   const more=metrics.slice(2).map(x=>`<span>${icon('fa-arrow-trend-up')} ${x.name} +${x.diff.toFixed(1)}${x.suffix}</span>`).join('');
   return `<h2 class="hl">${y} 年研究成果｜同期成長亮點</h2>
     <div class="deltas">${cards}</div>
