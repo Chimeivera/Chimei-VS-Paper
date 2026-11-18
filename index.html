@@ -423,7 +423,7 @@ R.ov=el=>{
 </div>
      <div class="ph"><img src="${PHOTO}" alt="佳里奇美醫院院區外觀"></div>
      <svg class="ecg" viewBox="0 0 800 80" preserveAspectRatio="none" aria-hidden="true"><path class="base hero-line" d="${ECG_D}"/></svg></div>
-   <div class="kpis">${mon('fa-sack-dollar','累計論文獎金','TOTAL AWARDS',w1(sum(D.recs)),'萬元')}${mon('fa-file-waveform','110–'+LAST()+' 年累計獎勵紀錄','RECORDS',fmt(D.recs.length),'筆')}${mon('fa-user-doctor','獲獎醫師','PHYSICIANS',fmt(people),'人')}${mon('fa-hospital','涵蓋科別','DEPARTMENTS',fmt(dv),'個')}</div>${brief()}`;
+   <div class="kpis">${mon('fa-sack-dollar','累計論文獎金','TOTAL AWARDS',w1(sum(D.recs)),'萬元')}${mon('fa-file-waveform','110–'+LAST()+' 年累計獎勵紀錄','RECORDS',fmt(D.recs.length),'筆')}${mon('fa-user-doctor','論文獎勵申請醫師','APPLICANTS',fmt(people),'人')}${mon('fa-hospital','涵蓋科別','DEPARTMENTS',fmt(dv),'個')}</div>${brief()}`;
 };
 R.yr=el=>{
   const bv=yearVals(D.recs,'b'),fv=yearVals(D.fees,'b'),tb=bv.map((x,i)=>x+fv[i]);const s=a=>a.reduce((x,y)=>x+y,0);
@@ -489,7 +489,7 @@ function briefData(){
   out.push(['fa-hospital','科別集中度',`前三科別 ${t3.map(d=>`<b>${esc(d.dv)}</b>`).join('、')} 合計占累計獎金 <b>${Math.round(sum(t3,d=>d.b)/T*100)}%</b>（共 ${dg.length} 個科別）`]);
   // 4 人員集中
   const pa=peopleAgg(),t5=pa.slice(0,5);
-  out.push(['fa-user-doctor','人員集中度',`${pa.length} 位獲獎醫師中，前 5 位合計占累計獎金 <b>${Math.round(sum(t5,p=>p.b)/T*100)}%</b>；最高為 <b>${esc(pa[0].nm)}</b>（${esc(pa[0].dv)}）${w1(pa[0].b)} 萬元`]);
+  out.push(['fa-user-doctor','人員集中度',`${pa.length} 位論文獎勵申請醫師中，前 5 位合計占累計獎金 <b>${Math.round(sum(t5,p=>p.b)/T*100)}%</b>；最高為 <b>${esc(pa[0].nm)}</b>（${esc(pa[0].dv)}）${w1(pa[0].b)} 萬元`]);
   return out;}
 function brief(){const out=briefData();
   return `<section class="brief" aria-label="重點摘要"><h3>${icon('fa-clipboard-check')}重點摘要</h3><ul>${out.map(([ic,h,s])=>`<li><span class="bi">${icon(ic)}</span><div><b class="bh">${h}</b><p>${s}</p></div></li>`).join('')}</ul></section>`;
@@ -529,7 +529,7 @@ R.dept=el=>{
     <div class="g2b"><div class="panel"><div class="cbox" style="height:500px"><canvas id="cDept" role="img" aria-label="科別累計論文獎金 Top 10"></canvas></div></div>
     <div class="tw"><table class="t"><thead><tr><th>排名</th><th>科別</th><th>篇數</th><th>獎金(萬元)</th><th>人數</th></tr></thead><tbody>
     ${top.map((d,i)=>`<tr><td>${String(i+1).padStart(2,'0')}</td><td class="l"><button class="lnk" data-dv="${esc(d.dv)}">${esc(d.dv)}</button></td><td>${fmt(d.n)}</td><td class="b">${w1(d.b)}</td><td>${d.p}</td></tr>`).join('')}</tbody></table></div></div>
-    <p class="note">人數：該科別獲獎醫師人數（不重複）。科別以醫師最近一次申請時的科別為準。點選科別名稱可查看人員明細。${STAR()}</p>`;
+    <p class="note">人數：該科別論文獎勵申請醫師人數（依人事號不重複計算）。科別以醫師最近一次申請時的科別為準。點選科別名稱可查看人員明細。${STAR()}</p>`;
     el.querySelectorAll('[data-dv]').forEach(b=>b.onclick=()=>deptModal(b.dataset.dv,'b'));}
   hbar('dept',document.getElementById('cDept'),top.map((d,i)=>`${i+1}. ${d.dv}`),top.map(d=>+(d.b/1e4).toFixed(1)));
 };
@@ -728,7 +728,7 @@ async function buildPptx(){
    s.addText(`${rangeTxt()}\n論文獎金統計分析`,{x:0.7,y:1.8,w:5.6,h:1.5,fontFace:F,fontSize:34,bold:true,color:'FFFFFF',margin:0,valign:'top',isTextBox:true});
    s.addShape(pptx.ShapeType.rect,{x:0.7,y:3.42,w:0.6,h:0.04,fill:{color:CYH},line:{type:'none'}});
    s.addText('近年獎金趨勢　·　科別排名　·　個人排名　·　年度比較',{x:0.7,y:3.62,w:5.6,h:0.3,fontFace:F,fontSize:11,color:'A6C8D0',margin:0,isTextBox:true});
-   const k=[[w1(sum(D.recs)),'累計論文獎金','萬元'],[fmt(D.recs.length),'累計論文數','篇'],[fmt(new Set(D.recs.map(r=>r.id)).size),'獲獎醫師','人'],[fmt(new Set(D.recs.map(r=>r.dv)).size),'涵蓋科別','個']];
+   const k=[[w1(sum(D.recs)),'累計論文獎金','萬元'],[fmt(D.recs.length),'累計論文數','篇'],[fmt(new Set(D.recs.map(r=>r.id)).size),'論文獎勵申請醫師','人'],[fmt(new Set(D.recs.map(r=>r.dv)).size),'涵蓋科別','個']];
    k.forEach((x,i)=>{const X=0.7+i*1.42,Yy=4.2;
      s.addShape(pptx.ShapeType.rect,{x:X,y:Yy,w:1.32,h:1.0,fill:{color:DECK2},line:{color:'1C4A5A',width:0.75}});
      s.addText(`${x[1]}（${x[2]}）`,{x:X+0.08,y:Yy+0.1,w:1.2,h:0.24,fontFace:F,fontSize:8.5,color:'A6C8D0',margin:0,isTextBox:true});
@@ -788,7 +788,7 @@ async function buildPptx(){
    const rows=[[hc('排名'),hc('科別'),hc('篇數'),hc('獎金(萬元)'),hc('人數')]];
    top.forEach((d,i)=>rows.push([cell(String(i+1).padStart(2,'0'),{fontFace:M}),cell(d.dv),cell(fmt(d.n),{fontFace:M}),cell(w1(d.b),{fontFace:M,bold:true}),cell(d.p,{fontFace:M})].map(c=>(i%2&&(c.options.fill={color:ZB}),c))));
    s.addTable(rows,tb(0,{x:7.4,y:1.45,w:5.4,colW:[0.7,1.9,0.8,1.3,0.7],rowH:0.42}));
-   s.addText('人數：該科別獲獎醫師人數（不重複）',{x:7.4,y:6.25,w:5.4,h:0.3,fontFace:F,fontSize:9,color:GR,margin:0,isTextBox:true});}
+   s.addText('人數：該科別論文獎勵申請醫師人數（依人事號不重複計算）',{x:7.4,y:6.25,w:5.4,h:0.3,fontFace:F,fontSize:9,color:GR,margin:0,isTextBox:true});}
   // 5 people top10
   {const s=base('ppl','個人累計論文獎金 Top 10',`${rangeTxt()}｜依個人累計獎金由高至低排序`);const top=peopleAgg().slice(0,10);
    s.addChart(pptx.ChartType.bar,[{name:'累計論文獎金（萬元）',labels:top.map((p,i)=>`${i+1}. ${p.nm}（${p.dv}）`),values:top.map(p=>+(p.b/1e4).toFixed(1))}],Object.assign({x:0.5,y:1.35,w:12.3,h:5.5,chartColors:[CY]},hbarOpt,{catAxisLabelFontSize:11,dataLabelFontSize:10}));}
