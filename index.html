@@ -679,6 +679,7 @@ R.ov=el=>{
  const drows=activeDepartments.length?activeDepartments.map((x,i)=>`<div class="exec-dept-row"><span class="exec-rank">${String(i+1).padStart(2,'0')}</span><span class="exec-dept-name" title="${esc(x.name)}">${esc(x.name)}</span><span class="exec-dept-bar"><i style="width:${Math.round(x.award/depPeak*100)}%"></i></span><b>${w1(x.award)} 萬</b></div>`).join(''):'<p class="exec-empty">本年度尚無科別獎勵紀錄。</p>';
  el.innerHTML=`<section class="exec-dashboard" aria-label="研究成果總覽">
  <div class="exec-heading"><div><div class="exec-eyebrow">${icon('fa-chart-line')} RESEARCH OVERVIEW · 研究成果</div><h2>${latestTitle}</h2><p>${rangeTxt()}｜最新申請資料截至 ${cutTxt()}；${y} 年尚非完整年度</p></div><div class="exec-live"><span></span> ${esc(dataStorageStatus)}</div></div>
+ ${compareHtml}
  <div class="exec-kpis">
  ${kpi('本年度論文獎勵',fmt(cur.length),'筆','依申請紀錄計算，不等同不同論文篇數','fa-file-waveform','primary')}
  ${kpi('本年度論文獎金',w1(sum(cur)),'萬元','刊登費另計 '+w1(sum(fee))+' 萬元','fa-sack-dollar')}
@@ -695,7 +696,7 @@ R.ov=el=>{
     <p class="exec-footnote">科別依申請資料歸屬，為申請紀錄之統計，不代表全院所有研究產出。</p>
   </section>
  </div>
- <section class="exec-insights" aria-label="研究成果重點"><h3>${icon('fa-clipboard-check')} 院級管理重點</h3>
+ <section class="exec-insights" aria-label="研究成果重點"><h3>${icon('fa-clipboard-check')} 研究成果重點</h3>
  <div class="exec-insight-grid">
   <div><span>本年度 SCI 比例</span><strong>${rate.toFixed(1)}%</strong><small>${fmt(sci)} / ${fmt(cur.length)} 筆論文獎勵申請紀錄</small></div>
   <div><span>歷年完整年度獎金高點</span><strong>${highestFull?highestFull.year+' 年':'—'}</strong><small>${highestFull?w1(highestFull.amount)+' 萬元（不含刊登費）':'尚無可比較的完整年度'}</small></div>
